@@ -10,7 +10,7 @@ If you are not familiar with Medusa, you can learn more on [the project web site
 
 The goal of this plugin is to make the fewest changes needed to the Medusa core to have customer credentials (passwords) stored in Cognito instead of the Medusa database.  It uses Cognito for authentication only.  This plugin does not use Cognito for identity (user data) or authorization (session management).  Those functions continue to be handled by Medusa.
 
-- Allows you to store customer credentials (passwords) in an AWS Cognito user pool instead of in your Medusa database
+- Allows you to store customer credentials (passwords) in an AWS Cognito user pool instead of in your Medusa database.
 - Medusa still handles all session management after a user is authenticated.  
 - Can be used by a store with existing customers.  Passwords for existing customers will be moved from the Medusa database to Cognito after a successful login.
 - Supports only username/password auth flow.
