@@ -2,6 +2,8 @@
 
 Use AWS Cognito to store customer credentials instead of the Postgres database
 
+[Documentation](https://pevey.com/medusa-auth-cognito)
+
 If you are not familiar with Medusa, you can learn more on [the project web site](https://www.medusajs.com/).
 
 > Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
@@ -62,4 +64,4 @@ When you create your user pool, make sure you create an app integration with the
 - Therefore, to revoke customer authorization, you must expire the session in the Medusa database, the same as you would now.  
 - As an example, if you wanted to implement in your storefront the ability for a customer to "Sign out on all other devices," or similar functionality, you would do that by expiring the other active Medusa sessions.
 - Changing token expiration times, refresh times, etc., via the AWS user pool settings will have no effect.  
-- Revoking tokens via the AWS console or API will have no effect.  
+- Revoking tokens via the AWS console or API will have no effect.
