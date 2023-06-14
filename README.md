@@ -48,8 +48,8 @@ const plugins = [
 	- AdminInitiateAuth
 	- AdminSetUserPassword
 	- AdminDeleteUser  
-- Obtain the userPoolId from the CLI or AWS console.  Be careful here.  The user pool id is not the same as the user pool name.
-- Obtain the clientID add from creating an "App integration" for your user pool.  Be careful here.  When creating your app, be sure to NOT select the option to generate a client secret. The AWS javascript SDK does not support the use of client secrets.  That's okay.  We will be using our IAM credentials instead.
+- Obtain the userPoolId from the CLI or AWS console.  NOTE: The user pool id is not the same as the user pool name.
+- Obtain the clientID from creating an "App integration" for your user pool.  NOTE: When creating your app, be sure to NOT select the option to generate a client secret. The AWS javascript SDK does not support the use of client secrets.  That's okay.  We will be using our IAM credentials instead.
 
 ## AWS User Pool Setup
 
