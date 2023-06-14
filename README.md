@@ -48,8 +48,8 @@ const plugins = [
 	- AdminInitiateAuth
 	- AdminSetUserPassword
 	- AdminDeleteUser  
-- Obtain the userPoolId from the CLI or AWS console.  NOTE: The user pool id is not the same as the user pool name.
-- Obtain the clientID from creating an "App integration" for your user pool.  NOTE: When creating your app, be sure to NOT select the option to generate a client secret. The AWS javascript SDK does not support the use of client secrets.  Also, we will only be communicating with Cognito directly from our Medusa server.  We will be using our IAM credentials obtained above.
+- Obtain the userPoolId from the CLI or AWS console.  IMPORTANT NOTE: The user pool id is not the same as the user pool name.
+- Obtain the clientID from creating an "App integration" for your user pool.  IMPORTANT NOTE: When creating your app, be sure to NOT select the option to generate a client secret. The AWS javascript SDK does not support the use of client secrets.  Also, we will only be communicating with Cognito directly from our Medusa server.  We will be using our IAM credentials obtained above.
 
 ## AWS User Pool Setup
 
@@ -58,7 +58,7 @@ When you create your user pool, make sure you create an app integration with the
 ## Revoking Customer Authorization
 
 - As mentioned above, this plugin uses Cognito as a credentials provider only.  
-- Once a user is logged in to an active Medusa session, that session is managed by Medusa in exactly the same way they would be managed without this plugin.
+- Once a user is logged in to an active Medusa session, that session is managed by Medusa in exactly the same way a session would be managed without this plugin.
 - Therefore, to revoke customer authorization, you must expire the session in the Medusa database, the same as you would now.  
 - As an example, if you wanted to implement in your storefront the ability for a customer to "Sign out on all other devices," or similar functionality, you would do that by expiring the other active Medusa sessions.
 - Changing token expiration times, refresh times, etc., via the AWS user pool settings will have no effect.  
