@@ -42,7 +42,7 @@ const plugins = [
 ]
 ```
 
-- COGNITO_REGION will be for example "us-east-1"
+- The region will be for example "us-east-1"
 - Obtain the access key id and secret access key by creating an IAM user with permissions for the following Cognito operations:
 	- AdminCreateUser
 	- AdminInitiateAuth
