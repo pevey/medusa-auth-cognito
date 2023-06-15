@@ -65,7 +65,6 @@ export default class CustomerService extends MedusaCustomerService {
 			// ===============================================================
 			// THIS SECTION IS MODIFIED FROM THE CORE
 			// Seems like this should be in the core
-			const oldEmail = customer.email
 			const email = update.email?.toLowerCase()
 			if (email) {
 				const existing = await this.listByEmail(email).catch(() => undefined)
@@ -98,35 +97,34 @@ export default class CustomerService extends MedusaCustomerService {
 					await this.updateBillingAddress_(customer, address)
 				}
 			}
+			
+			// MOVE PASSWORD UPDATE DOWN TO ONLY RUN AFTER REST OF UPDATE??
+			// ===============================================================
+			// THIS SECTION IS MODIFIED FROM THE CORE
+			// IT WAS ALSO MOVED SO IT DOES NOT RUN IF THE REST OF THE UPDATE FAILS
+			if (password) {
+				await this.cognitoService.setCustomerPassword(customer.email, password).catch(() => { 
+					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not update customer password in Cognito") 
+				})
+				customer.password_hash = "cognito"
+			}
+			if (email) {
+				await this.cognitoService.updateCustomerEmail(customer.email, email).catch(() => {
+					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not update customer email in Cognito")
+				})
+			}
+			// END CHANGED SECTION
+			// ===============================================================
 
 			for (const [key, value] of Object.entries(rest)) {
 				customer[key] = value
 			}
-
-			// PASSWORD UPDATE MOVED DOWN TO RUN AFTER REST OF UPDATE
 			
 			if (groups) {
 				customer.groups = groups as CustomerGroup[]
 			}
 			
 			const updated = await customerRepository.save(customer)
-			
-			// ===============================================================
-			// THIS SECTION IS MODIFIED FROM THE CORE
-			// IT WAS ALSO MOVED SO IT DOES NOT RUN IF THE REST OF THE UPDATE FAILS
-			if (email) {
-				await this.cognitoService.updateCustomerEmail(oldEmail, email).catch(() => {
-					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not update customer email in Cognito")
-				})
-			}
-			if (password) {
-				await this.cognitoService.setCustomerPassword(email, password).catch(() => { 
-					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not update customer password in Cognito") 
-				})
-				customer.password_hash = "cognito"
-			}
-			// END CHANGED SECTION
-			// ===============================================================
 			
 			await this.eventBusService_
 			.withTransaction(manager)
