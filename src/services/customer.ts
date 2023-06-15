@@ -101,7 +101,6 @@ export default class CustomerService extends MedusaCustomerService {
 			// MOVE PASSWORD UPDATE DOWN TO ONLY RUN AFTER REST OF UPDATE??
 			// ===============================================================
 			// THIS SECTION IS MODIFIED FROM THE CORE
-			// IT WAS ALSO MOVED SO IT DOES NOT RUN IF THE REST OF THE UPDATE FAILS
 			if (password) {
 				await this.cognitoService.setCustomerPassword(customer.email, password).catch(() => { 
 					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not update customer password in Cognito") 
