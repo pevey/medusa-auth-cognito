@@ -17,6 +17,12 @@ The goal of this plugin is to make the fewest changes needed to the Medusa core 
 - Can be used by a store with existing customers.  Passwords for existing customers will be moved from the Medusa database to Cognito after a successful login.
 - Supports only username/password auth flow.
 
+## Conversion of Customer Passwords
+
+- After the plugin is installed, when customers log in successfully for the first time, their password will be saved in your AWS Cognito user pool, and the password hash in your Postgres table will be removed.
+- WARNING: This is a one-way conversion.  Once the existing password hash is deleted, it cannot be recovered by removing this plugin.  This is by design. The point of this plugin is to remove the password hashes from the Medusa database to reduce the potential exposure of a breach of the application database.
+- If you ever want to stop using your Cognito user pool and convert back to storing credentials in the Postgres database, you will either need to restore the hashes from a database backup, have customers reset their passwords, or create a custom Medusa plugin that creates and stores the password hashes over time as customers log in.
+
 ## Installation
 
 ```bash
@@ -47,6 +53,7 @@ const plugins = [
 - The region will be for example "us-east-1"
 - Obtain the access key id and secret access key by creating an IAM user with permissions for the following Cognito operations:
 	- AdminCreateUser
+	- AdminUpdateUserAttributes
 	- AdminInitiateAuth
 	- AdminSetUserPassword
 	- AdminDeleteUser  
@@ -55,7 +62,7 @@ const plugins = [
 
 ## AWS User Pool Setup
 
-When you create your user pool, make sure you create an app integration with the ALLOW_ADMIN_USER_PASSWORD_AUTH authentication flow enabled.
+When you create your user pool, select 'email' as an alias attribute for signing in.  Also, make sure you create an app integration with the ALLOW_ADMIN_USER_PASSWORD_AUTH authentication flow enabled.
 
 ## Revoking Customer Authorization
 

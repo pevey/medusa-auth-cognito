@@ -31,13 +31,9 @@ export default class CustomerService extends MedusaCustomerService {
 			}
 			
 			// ===============================================================
-			// THIS SECTION IS THE ONLY PART MODIFIED FROM THE CORE
+			// THIS SECTION IS MODIFIED FROM THE CORE
 			// if password is set, create cognito user and then delete password from object in memory
 			if (password) {
-				// const hashedPassword = await this.hashPassword_(password)
-				// customer.password_hash = hashedPassword
-				// customer.has_account = true
-				// delete customer.password
 				if (await this.cognitoService.createCustomer(email, password)) {
 					customer.password_hash = "cognito"
 					customer.has_account = true
@@ -60,16 +56,28 @@ export default class CustomerService extends MedusaCustomerService {
 		})
 	}
 
-	async update(
-		customerId: string,
-		update: UpdateCustomerInput
-		): Promise<Customer> {
+	async update(customerId: string, update: UpdateCustomerInput): Promise<Customer> {
 		return await this.atomicPhase_(async (manager) => {
-			const customerRepository = manager.withRepository(
-				this.customerRepository_
-			)
+			const customerRepository = manager.withRepository(this.customerRepository_)
 
 			const customer = await this.retrieve(customerId)
+
+			// ===============================================================
+			// THIS SECTION IS MODIFIED FROM THE CORE
+			// Seems like this should be in the core
+			const oldEmail = customer.email
+			const email = update.email?.toLowerCase()
+			if (email) {
+				const existing = await this.listByEmail(email).catch(() => undefined)
+				if (existing) {
+					if (existing.some((customer) => customer.has_account)) {
+						throw new MedusaError(MedusaError.Types.DUPLICATE_ERROR, "A customer with the given email already has an account.")
+					}
+				}
+			}
+			// END CHANGED SECTION
+			// ===============================================================
+
 
 			const {
 				password,
@@ -95,27 +103,34 @@ export default class CustomerService extends MedusaCustomerService {
 				customer[key] = value
 			}
 
+			// PASSWORD UPDATE MOVED DOWN TO RUN AFTER REST OF UPDATE
+			
+			if (groups) {
+				customer.groups = groups as CustomerGroup[]
+			}
+			
+			const updated = await customerRepository.save(customer)
+			
 			// ===============================================================
-			// THIS SECTION IS THE ONLY PART MODIFIED FROM THE CORE
+			// THIS SECTION IS MODIFIED FROM THE CORE
+			// IT WAS ALSO MOVED SO IT DOES NOT RUN IF THE REST OF THE UPDATE FAILS
+			if (email) {
+				await this.cognitoService.updateCustomerEmail(oldEmail, email).catch(() => {
+					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not update customer email in Cognito")
+				})
+			}
 			if (password) {
-				// customer.password_hash = await this.hashPassword_(password)
-				await this.cognitoService.setPassword(customer.email, password).catch(() => { 
+				await this.cognitoService.setCustomerPassword(email, password).catch(() => { 
 					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not update customer password in Cognito") 
 				})
 				customer.password_hash = "cognito"
 			}
 			// END CHANGED SECTION
 			// ===============================================================
-
-			if (groups) {
-				customer.groups = groups as CustomerGroup[]
-			}
-
-			const updated = await customerRepository.save(customer)
-
+			
 			await this.eventBusService_
-				.withTransaction(manager)
-				.emit(CustomerService.Events.UPDATED, updated)
+			.withTransaction(manager)
+			.emit(CustomerService.Events.UPDATED, updated)
 
 			return updated
 		})

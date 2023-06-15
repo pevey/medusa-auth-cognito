@@ -4,6 +4,7 @@ import { MedusaError } from "@medusajs/utils"
 import { 
 	CognitoIdentityProviderClient, 
 	AdminCreateUserCommand, 
+	AdminUpdateUserAttributesCommand,
 	AdminInitiateAuthCommand, 
 	AdminSetUserPasswordCommand, 
 	AdminDeleteUserCommand 
@@ -60,17 +61,30 @@ export default class CognitoService extends TransactionBaseService {
 			else throw e
 		})
 		if (password) {
-			await this.setPassword(email, password).catch(async (e) => { 
+			await this.setCustomerPassword(email, password).catch(async (e) => { 
 				// something went wrong, clean up user so they can try again
 				await this.deleteCustomer(email)
 				return false
 			})
 		}
-
 		return true
 	}
 
-	async setPassword(email: string, password: string) {
+	async updateCustomerEmail(email: string, newEmail: string) {
+		// returns true or false, based on success
+		const command = new AdminUpdateUserAttributesCommand({
+			UserPoolId: this.options.userPoolId,
+			Username: email,
+			UserAttributes: [{
+				Name: 'email',
+				Value: newEmail
+			}]
+		})
+		await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 }).catch(e => { throw e })
+		return true
+	}
+
+	async setCustomerPassword(email: string, password: string) {
 		// returns true or false, based on success
 		const command = new AdminSetUserPasswordCommand({
 			UserPoolId: this.options.userPoolId,
@@ -93,7 +107,6 @@ export default class CognitoService extends TransactionBaseService {
 	}
 	
 	async authenticateCustomer(email: string, password: string) {
-
 		const command = new AdminInitiateAuthCommand({
 			UserPoolId: this.options.userPoolId,
 			ClientId: this.options.clientId,

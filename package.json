@@ -1,6 +1,6 @@
 {
 	"name": "medusa-auth-cognito",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Use AWS Cognito to store customer credentials instead of the Postgres database",
 	"repository": {
 		"type": "git",
