@@ -42,7 +42,20 @@ export default class CognitoService extends TransactionBaseService {
 		})
 	}
 
-	async createCustomer(email: string, password: string = '') {
+	async authenticateCustomer(email: string, password: string) {
+		const command = new AdminInitiateAuthCommand({
+			UserPoolId: this.options.userPoolId,
+			ClientId: this.options.clientId,
+			AuthFlow: 'ADMIN_NO_SRP_AUTH',
+			AuthParameters: {
+				USERNAME: email,
+				PASSWORD: password
+			}
+		})
+		return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
+	}
+
+	async createCustomer(email: string, password: string) {
 		// returns true or false, based on success
 		email = email.toLowerCase() // just to be sure
 		if (!email ) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Email and password are required to create a new Cognito user")
@@ -60,14 +73,23 @@ export default class CognitoService extends TransactionBaseService {
 			if (e.__type === 'UsernameExistsException') throw new MedusaError(MedusaError.Types.DUPLICATE_ERROR, "Email already exists")
 			else throw e
 		})
-		if (password) {
-			await this.setCustomerPassword(email, password).catch(async (e) => { 
-				// something went wrong, clean up user so they can try again
-				await this.deleteCustomer(email)
-				return false
-			})
-		}
+		await this.setCustomerPassword(email, password).catch(async (e) => { 
+			// something went wrong, clean up user so they can try again
+			await this.deleteCustomer(email)
+			return false
+		})
 		return true
+	}
+
+	async setCustomerPassword(email: string, password: string) {
+		// returns true or false, based on success
+		const command = new AdminSetUserPasswordCommand({
+			UserPoolId: this.options.userPoolId,
+			Username: email,
+			Password: password,
+			Permanent: true
+		})
+		return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
 	}
 
 	async updateCustomerEmail(email: string, newEmail: string) {
@@ -80,20 +102,7 @@ export default class CognitoService extends TransactionBaseService {
 				Value: newEmail
 			}]
 		})
-		await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 }).catch(e => { throw e })
-		return true
-	}
-
-	async setCustomerPassword(email: string, password: string) {
-		// returns true or false, based on success
-		const command = new AdminSetUserPasswordCommand({
-			UserPoolId: this.options.userPoolId,
-			Username: email,
-			Password: password,
-			Permanent: true
-		})
-		await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 }).catch(e => { throw e })
-		return true
+		return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
 	}
 	
 	async deleteCustomer(email: string) {
@@ -102,21 +111,6 @@ export default class CognitoService extends TransactionBaseService {
 			UserPoolId: this.options.userPoolId,
 			Username: email
 		})
-		await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 }).catch(e => { throw e })
-		return true
-	}
-	
-	async authenticateCustomer(email: string, password: string) {
-		const command = new AdminInitiateAuthCommand({
-			UserPoolId: this.options.userPoolId,
-			ClientId: this.options.clientId,
-			AuthFlow: 'ADMIN_NO_SRP_AUTH',
-			AuthParameters: {
-				USERNAME: email,
-				PASSWORD: password
-			}
-		})
-		await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 }).catch(e => { throw e })
-		return true
+		return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
 	}
 }

@@ -1,6 +1,5 @@
 import { AuthService as MedusaAuthService, Customer } from "@medusajs/medusa"
 import { AuthenticateResult } from "@medusajs/medusa/dist/types/auth"
-import { MedusaError } from "@medusajs/utils"
 
 export default class AuthService extends MedusaAuthService {
 	private cognitoService: any
@@ -25,49 +24,34 @@ export default class AuthService extends MedusaAuthService {
 				}
 			}
 
-			if (customer.password_hash === "cognito") {
-				if (await this.cognitoService.authenticateCustomer(email, password)) {
-					customer = await this.customerService_.withTransaction(transactionManager).retrieveRegisteredByEmail(email)
-					return {
-						success: true,
-						customer
-					}
-				} else {
-					return {
-						success: false,
-						error: "Invalid email or password"
-					}
-				}
-
-			} else { // convert legacy user to cognito user
-
-				// check if password matches
-				const passwordsMatch = await this.comparePassword_(password, customer.password_hash)
-				if (!passwordsMatch) {
-					return {
-						success: false,
-						error: "Invalid email or password"
+			await this.cognitoService.authenticateCustomer(email, password).catch(async (e) => {
+				if (e.__type === 'UserNotFoundException') {
+					// user not found in cognito, check if legacy user with valid password
+					if (await this.comparePassword_(password, customer.password_hash)) {
+						// valid, try to convert legacy user to cognito user
+						await this.cognitoService.createCustomer(email).then(async () => {
+							console.log("Valid legacy password, created customer in Cognito")
+							await this.customerService_.update(customer.id, { password }).catch(() => {
+								console.log("Valid legacy password, created customer in Cognito, but failed to update customer with new password. Deleting customer from Cognito")
+								this.cognitoService.deleteCustomer(email)
+							})
+						}).catch(async (e) => { 
+							console.log("Valid legacy password, but failed to add customer to Cognito")
+							console.log(e)
+						})
+					} else {
+						return {
+							success: false,
+							error: "Invalid email or password"
+						}
 					}
 				}
-
-				// create a cognito user with no password yet
-				await this.cognitoService.createCustomer(email).catch(() => {
-					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not create customer in Cognito")
-				})
-
-				// set the medusa password_hash to "cognito" and set password in cognito
-				await this.customerService_.update(customer.id, { password }).catch(async () => {
-					// something went wrong, clean up user so they can try again
-					await this.cognitoService.deleteCustomer(email)
-					throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Could not set cognito password and update customer in Medusa")
-				})
-
-				customer = await this.customerService_.withTransaction(transactionManager).retrieveRegisteredByEmail(email)
-
-				return {
-					success: true,
-					customer
-				}
+			})
+			
+			customer = await this.customerService_.withTransaction(transactionManager).retrieveRegisteredByEmail(email)
+			return {
+				success: true,
+				customer
 			}
 		})
 	}
