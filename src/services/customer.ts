@@ -33,7 +33,7 @@ export default class CustomerService extends MedusaCustomerService {
 			let savedCustomer = await super.update(customerId, update)
 			if (password) {
 				await this.cognitoService.setCustomerPassword(customer.email, password).then(async () => {
-					update.password = crypto.randomBytes(16).toString('hex') // dummy password to send to parent create method
+					update.password = crypto.randomBytes(16).toString('hex') // dummy password to send to parent update method
 					savedCustomer = await super.update(customerId, { password: update.password })
 				}).catch(async (e) => {
 					if (e.__type === 'InvalidParameterException') throw new MedusaError(MedusaError.Types.INVALID_DATA, "Password does not meet requirements")
