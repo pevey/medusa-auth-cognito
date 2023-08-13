@@ -24,7 +24,7 @@ export default class AuthService extends MedusaAuthService {
             }
          }
 
-         await this.cognitoService.authenticateCustomer(email, password).catch(async (e) => {
+         const success: boolean = await this.cognitoService.authenticateCustomer(email, password).then(() => true).catch(async (e) => {
             if (e.__type === 'UserNotFoundException') {
                // user not found in cognito, check if legacy user with valid password
                if (await this.comparePassword_(password, customer.password_hash)) {
@@ -40,18 +40,24 @@ export default class AuthService extends MedusaAuthService {
                      console.log(e)
                   })
                } else {
-                  return {
-                     success: false,
-                     error: "Invalid email or password"
-                  }
+                  return false
                }
             }
+            if (e.__type === 'NotAuthorizedException') {
+               return false
+            }
          })
-         
-         customer = await this.customerService_.withTransaction(transactionManager).retrieveRegisteredByEmail(email)
-         return {
-            success: true,
-            customer
+         if (!success) {
+            return {
+               success: false,
+               error: "Invalid email or password"
+            }
+         } else {
+            customer = await this.customerService_.withTransaction(transactionManager).retrieveRegisteredByEmail(email)
+            return {
+               success: true,
+               customer
+            }
          }
       })
    }

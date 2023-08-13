@@ -52,7 +52,12 @@ export default class CognitoService extends TransactionBaseService {
             PASSWORD: password
          }
       })
-      return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
+      const data = await this.client.send(command).catch(e => {
+         throw e
+      })
+      // console.log(data)
+      // return (data.AuthenticationResult.AccessToken == '')? false : true
+      return data?.AuthenticationResult?.AccessToken
    }
 
    async createCustomer(email: string, password: string) {
@@ -89,7 +94,7 @@ export default class CognitoService extends TransactionBaseService {
          Password: password,
          Permanent: true
       })
-      return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
+      return await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
    }
 
    async updateCustomerEmail(email: string, newEmail: string) {
@@ -102,7 +107,7 @@ export default class CognitoService extends TransactionBaseService {
             Value: newEmail
          }]
       })
-      return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
+      return await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
    }
    
    async deleteCustomer(email: string) {
@@ -111,6 +116,6 @@ export default class CognitoService extends TransactionBaseService {
          UserPoolId: this.options.userPoolId,
          Username: email
       })
-      return this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
+      return await this.client.send(command).then((res:any) => { res.httpStatusCode === 200 })
    }
 }
