@@ -55,8 +55,7 @@ export default class CognitoService extends TransactionBaseService {
       const data = await this.client.send(command).catch(e => {
          throw e
       })
-      // console.log(data)
-      // return (data.AuthenticationResult.AccessToken == '')? false : true
+
       return data?.AuthenticationResult?.AccessToken
    }
 
